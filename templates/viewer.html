@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}JSON Viewer - {{ filename }}{% endblock %}
+{% block title %}Manga Library - {{ filename }}{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -9,12 +9,15 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <h1 class="mb-0">
-                        <i class="fas fa-file-code me-3"></i>
-                        JSON Viewer
+                        <i class="fas fa-book-open me-3"></i>
+                        Manga Library
                     </h1>
                     <p class="mb-0 mt-2 opacity-90">{{ filename }}</p>
                 </div>
                 <div class="btn-group">
+                    <button class="btn btn-outline-light" id="viewToggle" data-view="cards">
+                        <i class="fas fa-code me-2"></i>Raw JSON
+                    </button>
                     <a href="{{ url_for('download_file', filename=filename) }}" 
                        class="btn btn-outline-light">
                         <i class="fas fa-download me-2"></i>Download
@@ -22,23 +25,6 @@
                     <a href="{{ url_for('index') }}" class="btn btn-outline-light">
                         <i class="fas fa-arrow-left me-2"></i>Back
                     </a>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <!-- Search Bar -->
-                <div class="p-3 border-bottom bg-light">
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fas fa-search"></i>
-                        </span>
-                        <input type="text" class="form-control" id="searchInput" 
-                               placeholder="Search in JSON...">
-                    </div>
-                </div>
-
-                <!-- JSON Content -->
-                <div class="json-viewer-container">
-                    <pre id="jsonViewer" class="json-viewer">{{ json_data | tojson(indent=2) }}</pre>
                 </div>
             </div>
         </div>
@@ -51,7 +37,7 @@
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
                 <i class="fas fa-book fa-2x mb-2"></i>
-                <h5 id="mangaCount">{{ json_data.backupManga|length if json_data.backupManga else 0 }}</h5>
+                <h5>{{ json_data.backupManga|length if json_data.backupManga else 0 }}</h5>
                 <small>Manga</small>
             </div>
         </div>
@@ -60,7 +46,7 @@
         <div class="card bg-success text-white">
             <div class="card-body text-center">
                 <i class="fas fa-list fa-2x mb-2"></i>
-                <h5 id="categoryCount">{{ json_data.backupCategories|length if json_data.backupCategories else 0 }}</h5>
+                <h5>{{ json_data.backupCategories|length if json_data.backupCategories else 0 }}</h5>
                 <small>Categories</small>
             </div>
         </div>
@@ -69,7 +55,7 @@
         <div class="card bg-info text-white">
             <div class="card-body text-center">
                 <i class="fas fa-puzzle-piece fa-2x mb-2"></i>
-                <h5 id="extensionCount">{{ json_data.backupSources|length if json_data.backupSources else 0 }}</h5>
+                <h5>{{ json_data.backupSources|length if json_data.backupSources else 0 }}</h5>
                 <small>Extensions</small>
             </div>
         </div>
@@ -78,8 +64,129 @@
         <div class="card bg-warning text-white">
             <div class="card-body text-center">
                 <i class="fas fa-cog fa-2x mb-2"></i>
-                <h5 id="preferenceCount">{{ json_data.backupPreferences|length if json_data.backupPreferences else 0 }}</h5>
+                <h5>{{ json_data.backupPreferences|length if json_data.backupPreferences else 0 }}</h5>
                 <small>Preferences</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchInput" 
+                                   placeholder="Search manga titles...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">All Categories</option>
+                            {% if json_data.backupCategories %}
+                                {% for category in json_data.backupCategories %}
+                                    <option value="{{ category.name }}">{{ category.name }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="1">Reading</option>
+                            <option value="2">Completed</option>
+                            <option value="3">On Hold</option>
+                            <option value="4">Dropped</option>
+                            <option value="5">Plan to Read</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Views -->
+<div id="cardsView" class="mt-4">
+    <div class="row" id="mangaGrid">
+        {% if json_data.backupManga %}
+            {% for manga in json_data.backupManga %}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 manga-card" 
+                     data-title="{{ manga.title|lower if manga.title else '' }}"
+                     data-categories="{{ manga.categories|join(',')|lower if manga.categories else '' }}"
+                     data-status="{{ manga.status if manga.status else '' }}">
+                    <div class="card h-100 manga-item">
+                        <div class="manga-thumbnail">
+                            {% if manga.thumbnailUrl %}
+                                <img src="{{ manga.thumbnailUrl }}" class="card-img-top" alt="{{ manga.title }}" 
+                                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+                            {% else %}
+                                <div class="no-thumbnail">
+                                    <i class="fas fa-book fa-3x"></i>
+                                </div>
+                            {% endif %}
+                            {% if manga.status %}
+                                <div class="status-badge status-{{ manga.status }}">
+                                    {% if manga.status == 1 %}Reading
+                                    {% elif manga.status == 2 %}Completed
+                                    {% elif manga.status == 3 %}On Hold
+                                    {% elif manga.status == 4 %}Dropped
+                                    {% elif manga.status == 5 %}Plan to Read
+                                    {% else %}Unknown
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">{{ manga.title or 'Unknown Title' }}</h6>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    {% if manga.author %}
+                                        <i class="fas fa-user me-1"></i>{{ manga.author }}<br>
+                                    {% endif %}
+                                    {% if manga.source %}
+                                        <i class="fas fa-globe me-1"></i>{{ manga.source }}<br>
+                                    {% endif %}
+                                    {% if manga.chapters %}
+                                        <i class="fas fa-list-ol me-1"></i>{{ manga.chapters|length }} chapters
+                                    {% endif %}
+                                </small>
+                            </p>
+                            {% if manga.categories %}
+                                <div class="categories">
+                                    {% for category in manga.categories[:3] %}
+                                        <span class="badge bg-secondary me-1">{{ category }}</span>
+                                    {% endfor %}
+                                    {% if manga.categories|length > 3 %}
+                                        <span class="badge bg-light text-dark">+{{ manga.categories|length - 3 }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-book fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No manga found in this backup</h5>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Raw JSON View (Hidden by default) -->
+<div id="jsonView" class="mt-4" style="display: none;">
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="json-viewer-container">
+                <pre id="jsonViewer" class="json-viewer">{{ json_data | tojson(indent=2) }}</pre>
             </div>
         </div>
     </div>
@@ -88,6 +195,80 @@
 
 {% block scripts %}
 <style>
+.manga-thumbnail {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.manga-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.manga-item:hover .manga-thumbnail img {
+    transform: scale(1.05);
+}
+
+.no-thumbnail {
+    color: #dee2e6;
+    text-align: center;
+}
+
+.status-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: white;
+}
+
+.status-1 { background: #28a745; } /* Reading */
+.status-2 { background: #007bff; } /* Completed */
+.status-3 { background: #ffc107; color: #000; } /* On Hold */
+.status-4 { background: #dc3545; } /* Dropped */
+.status-5 { background: #6c757d; } /* Plan to Read */
+
+.manga-item {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.manga-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.card-title {
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.categories {
+    margin-top: 0.5rem;
+}
+
+.categories .badge {
+    font-size: 0.7rem;
+    margin-bottom: 0.25rem;
+}
+
 .json-viewer-container {
     max-height: 70vh;
     overflow: auto;
@@ -113,33 +294,90 @@
     border-radius: 2px;
 }
 
-.card-header {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+@media (max-width: 768px) {
+    .manga-thumbnail {
+        height: 150px;
+    }
 }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var searchInput = document.getElementById('searchInput');
-    var jsonViewer = document.getElementById('jsonViewer');
-    var originalContent = jsonViewer.innerHTML;
+    var categoryFilter = document.getElementById('categoryFilter');
+    var statusFilter = document.getElementById('statusFilter');
+    var viewToggle = document.getElementById('viewToggle');
+    var cardsView = document.getElementById('cardsView');
+    var jsonView = document.getElementById('jsonView');
+    var mangaCards = document.querySelectorAll('.manga-card');
 
-    // Search functionality
-    searchInput.addEventListener('input', function() {
-        var searchTerm = this.value.toLowerCase();
+    // View toggle functionality
+    viewToggle.addEventListener('click', function() {
+        var currentView = this.getAttribute('data-view');
         
-        if (searchTerm) {
-            // Remove previous highlights
-            var cleanContent = originalContent.replace(/<mark class="highlight">(.*?)<\/mark>/g, '$1');
-            
-            // Add new highlights
-            var regex = new RegExp('(' + escapeRegex(searchTerm) + ')', 'gi');
-            var highlightedContent = cleanContent.replace(regex, '<mark class="highlight">$1</mark>');
-            
-            jsonViewer.innerHTML = highlightedContent;
+        if (currentView === 'cards') {
+            // Switch to JSON view
+            cardsView.style.display = 'none';
+            jsonView.style.display = 'block';
+            this.innerHTML = '<i class="fas fa-th me-2"></i>Card View';
+            this.setAttribute('data-view', 'json');
         } else {
-            // Restore original content
-            jsonViewer.innerHTML = originalContent;
+            // Switch to cards view
+            cardsView.style.display = 'block';
+            jsonView.style.display = 'none';
+            this.innerHTML = '<i class="fas fa-code me-2"></i>Raw JSON';
+            this.setAttribute('data-view', 'cards');
+        }
+    });
+
+    // Filter functionality
+    function filterManga() {
+        var searchTerm = searchInput.value.toLowerCase();
+        var selectedCategory = categoryFilter.value.toLowerCase();
+        var selectedStatus = statusFilter.value;
+
+        mangaCards.forEach(function(card) {
+            var title = card.getAttribute('data-title');
+            var categories = card.getAttribute('data-categories');
+            var status = card.getAttribute('data-status');
+
+            var matchesSearch = !searchTerm || title.includes(searchTerm);
+            var matchesCategory = !selectedCategory || categories.includes(selectedCategory);
+            var matchesStatus = !selectedStatus || status === selectedStatus;
+
+            if (matchesSearch && matchesCategory && matchesStatus) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update visible count
+        var visibleCards = document.querySelectorAll('.manga-card[style="display: block"], .manga-card:not([style*="display: none"])');
+        console.log('Showing ' + visibleCards.length + ' of ' + mangaCards.length + ' manga');
+    }
+
+    // Add event listeners
+    searchInput.addEventListener('input', filterManga);
+    categoryFilter.addEventListener('change', filterManga);
+    statusFilter.addEventListener('change', filterManga);
+
+    // JSON search functionality (when in JSON view)
+    var jsonViewer = document.getElementById('jsonViewer');
+    var originalJsonContent = jsonViewer.innerHTML;
+
+    searchInput.addEventListener('input', function() {
+        if (jsonView.style.display !== 'none') {
+            var searchTerm = this.value.toLowerCase();
+            
+            if (searchTerm) {
+                var cleanContent = originalJsonContent.replace(/<mark class="highlight">(.*?)<\/mark>/g, '$1');
+                var regex = new RegExp('(' + escapeRegex(searchTerm) + ')', 'gi');
+                var highlightedContent = cleanContent.replace(regex, '<mark class="highlight">$1</mark>');
+                jsonViewer.innerHTML = highlightedContent;
+            } else {
+                jsonViewer.innerHTML = originalJsonContent;
+            }
         }
     });
 
