@@ -244,6 +244,23 @@ def upload_file():
                                  success=False, 
                                  message=message)
 
+@app.route('/view/<filename>')
+def view_json(filename):
+    try:
+        file_path = os.path.join(app.config['OUTPUT_FOLDER'], secure_filename(filename))
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                json_data = loads(f.read())
+            return render_template('viewer.html', 
+                                 json_data=json_data, 
+                                 filename=filename)
+        else:
+            flash('File not found')
+            return redirect(url_for('index'))
+    except Exception as e:
+        flash(f'Error viewing file: {str(e)}')
+        return redirect(url_for('index'))
+
 @app.route('/download/<filename>')
 def download_file(filename):
     try:

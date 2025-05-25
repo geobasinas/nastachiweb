@@ -5,6 +5,7 @@ A modern web application that converts Tachiyomi backup files (.tachibk, .proto.
 ## ✨ Features
 
 - **Modern Web Interface**: Beautiful, responsive UI with drag-and-drop file upload
+- **JSON Viewer**: Interactive viewer with search functionality and backup statistics
 - **Multi-Fork Support**: Supports Mihon, TachiyomiSY, TachiyomiJ2K, Yokai, and Komikku
 - **Secure Processing**: Files are processed locally and automatically cleaned up
 - **REST API**: Programmatic access for automation
@@ -41,7 +42,8 @@ docker run -p 5000:5000 tachiyomi-converter
 2. Drag and drop your Tachiyomi backup file or click to browse
 3. Select your Tachiyomi fork (Mihon, SY, J2K, Yokai, or Komikku)
 4. Optionally enable preference conversion for human-readable format
-5. Click "Convert to JSON" and download your converted file
+5. Click "Convert to JSON"
+6. View the JSON content in the interactive viewer or download the file
 
 ### API Usage
 
