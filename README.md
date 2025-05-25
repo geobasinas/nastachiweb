@@ -6,6 +6,7 @@ A modern web application that converts Tachiyomi backup files (.tachibk, .proto.
 
 - **Modern Web Interface**: Beautiful, responsive UI with drag-and-drop file upload
 - **JSON Viewer**: Interactive viewer with search functionality and backup statistics
+- **Detailed Manga Pages**: Click any manga to see comprehensive details, chapters, and progress
 - **Multi-Fork Support**: Supports Mihon, TachiyomiSY, TachiyomiJ2K, Yokai, and Komikku
 - **Secure Processing**: Files are processed locally and automatically cleaned up
 - **REST API**: Programmatic access for automation
@@ -43,7 +44,10 @@ docker run -p 5000:5000 tachiyomi-converter
 3. Select your Tachiyomi fork (Mihon, SY, J2K, Yokai, or Komikku)
 4. Optionally enable preference conversion for human-readable format
 5. Click "Convert to JSON"
-6. View the JSON content in the interactive viewer or download the file
+6. Browse your manga library in the beautiful card view
+7. Click any manga card to see detailed information, chapters, and reading progress
+8. Use search and filters to find specific manga
+9. Toggle to raw JSON view or download the file
 
 ### API Usage
 
