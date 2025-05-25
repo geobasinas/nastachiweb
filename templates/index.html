@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h1 class="mb-0">
+                    <i class="fas fa-file-archive me-3"></i>
+                    Tachiyomi Backup Converter
+                </h1>
+                <p class="mb-0 mt-2 opacity-90">Convert your Tachiyomi backup files to readable JSON format</p>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                    <!-- File Upload Area -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>
+                            Select Backup File
+                        </label>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h5 class="mb-2">Drag & Drop your backup file here</h5>
+                            <p class="text-muted mb-3">or click to browse</p>
+                            <input type="file" class="form-control d-none" id="fileInput" name="file" 
+                                   accept=".tachibk,.proto.gz" required>
+                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>
+                                Choose File
+                            </button>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Supported formats: .tachibk, .proto.gz (Max size: 100MB)
+                            </small>
+                        </div>
+                        <div id="fileInfo" class="mt-3 d-none">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file me-2"></i>
+                                <span id="fileName"></span>
+                                <span class="badge bg-primary ms-2" id="fileSize"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="fork" class="form-label fw-bold">
+                                <i class="fas fa-code-branch me-2"></i>
+                                Tachiyomi Fork
+                            </label>
+                            <select class="form-select" id="fork" name="fork">
+                                {% for fork in forks %}
+                                    <option value="{{ fork }}" {% if fork == 'mihon' %}selected{% endif %}>
+                                        {{ fork.title() }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Select your Tachiyomi fork for proper schema parsing</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-cogs me-2"></i>
+                                Options
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="convertPreferences" name="convert_preferences">
+                                <label class="form-check-label" for="convertPreferences">
+                                    Convert preferences to human-readable format
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Experimental feature
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                            <i class="fas fa-magic me-2"></i>
+                            Convert to JSON
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Progress Bar -->
+                <div id="progressContainer" class="mt-4 d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold">Converting...</span>
+                        <span id="progressText">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="progressBar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="row mt-5">
+            <div class="col-md-4 text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h5>Secure Processing</h5>
+                <p class="text-white-50">Files are processed locally and automatically cleaned up</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h5>Fast Conversion</h5>
+                <p class="text-white-50">Quick protobuf to JSON conversion with schema validation</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <h5>Multi-Fork Support</h5>
+                <p class="text-white-50">Supports all major Tachiyomi forks and variants</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect(files[0]);
+        }
+    });
+
+    uploadArea.addEventListener('click', function() {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    function handleFileSelect(file) {
+        // Validate file type
+        const validExtensions = ['.tachibk', '.proto.gz'];
+        const isValid = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+        
+        if (!isValid) {
+            alert('Please select a valid backup file (.tachibk or .proto.gz)');
+            fileInput.value = '';
+            fileInfo.classList.add('d-none');
+            return;
+        }
+
+        // Display file info
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.classList.remove('d-none');
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form submission with progress simulation
+    uploadForm.addEventListener('submit', function(e) {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please select a file to upload');
+            return;
+        }
+
+        // Show progress
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Converting...';
+        progressContainer.classList.remove('d-none');
+
+        // Simulate progress (since we can't track real progress easily)
+        let progress = 0;
+        const interval = setInterval(function() {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            
+            progressBar.style.width = progress + '%';
+            progressText.textContent = Math.round(progress) + '%';
+        }, 200);
+
+        // Clean up interval after form submission
+        setTimeout(function() {
+            clearInterval(interval);
+        }, 5000);
+    });
+});
+</script>
+{% endblock %} 

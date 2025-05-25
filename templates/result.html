@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                {% if success %}
+                    <h1 class="mb-0 text-center">
+                        <i class="fas fa-check-circle me-3"></i>
+                        Conversion Successful!
+                    </h1>
+                {% else %}
+                    <h1 class="mb-0 text-center">
+                        <i class="fas fa-exclamation-triangle me-3"></i>
+                        Conversion Failed
+                    </h1>
+                {% endif %}
+            </div>
+            <div class="card-body text-center">
+                {% if success %}
+                    <div class="alert alert-success" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        {{ message }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <i class="fas fa-file-code" style="font-size: 4rem; color: var(--success-color);"></i>
+                    </div>
+                    
+                    <h4 class="mb-3">Your JSON file is ready!</h4>
+                    <p class="text-muted mb-4">
+                        The backup has been successfully converted to JSON format. 
+                        You can now download the file or convert another backup.
+                    </p>
+                    
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('download_file', filename=download_file) }}" 
+                           class="btn btn-success btn-lg">
+                            <i class="fas fa-download me-2"></i>
+                            Download JSON File
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Convert Another File
+                        </a>
+                    </div>
+                    
+                    <!-- File Info -->
+                    <div class="mt-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-info me-2"></i>
+                                    File Information
+                                </h6>
+                                <div class="row text-start">
+                                    <div class="col-sm-6">
+                                        <strong>Filename:</strong><br>
+                                        <code>{{ download_file }}</code>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Format:</strong><br>
+                                        <span class="badge bg-primary">JSON</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                {% else %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ message }}
+                    </div>
+                    
+                    <div class="mb-4">
+                        <i class="fas fa-times-circle" style="font-size: 4rem; color: var(--danger-color);"></i>
+                    </div>
+                    
+                    <h4 class="mb-3">Something went wrong</h4>
+                    <p class="text-muted mb-4">
+                        The conversion process encountered an error. Please check your file and try again.
+                    </p>
+                    
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-redo me-2"></i>
+                            Try Again
+                        </a>
+                    </div>
+                    
+                    <!-- Troubleshooting Tips -->
+                    <div class="mt-4">
+                        <div class="card bg-light">
+                            <div class="card-body text-start">
+                                <h6 class="card-title">
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    Troubleshooting Tips
+                                </h6>
+                                <ul class="mb-0">
+                                    <li>Ensure your file is a valid Tachiyomi backup (.tachibk or .proto.gz)</li>
+                                    <li>Check that the file is not corrupted</li>
+                                    <li>Try selecting the correct Tachiyomi fork</li>
+                                    <li>Make sure the file size is under 100MB</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Additional Actions -->
+        <div class="row mt-4">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 bg-transparent border-light">
+                    <div class="card-body text-center text-white">
+                        <i class="fas fa-question-circle mb-3" style="font-size: 2rem;"></i>
+                        <h6>Need Help?</h6>
+                        <p class="small mb-0">Check the documentation for supported file formats and troubleshooting.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 bg-transparent border-light">
+                    <div class="card-body text-center text-white">
+                        <i class="fas fa-code mb-3" style="font-size: 2rem;"></i>
+                        <h6>API Access</h6>
+                        <p class="small mb-0">Use our REST API for programmatic access to the converter.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide flash messages after 5 seconds
+    const alerts = document.querySelectorAll('.alert-dismissible');
+    alerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+    
+    // Add download tracking
+    const downloadBtn = document.querySelector('a[href*="download"]');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', function() {
+            // You could add analytics tracking here
+            console.log('File download initiated');
+        });
+    }
+});
+</script>
+{% endblock %} 
